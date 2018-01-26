@@ -352,6 +352,7 @@ class BaseIOStream(object):
                 # failure was never examined.
                 future.add_done_callback(lambda f: f.exception())
             raise
+        print ("read_until_regex return future :{}".format(future))
         return future
 
     def read_until(self, delimiter, callback=None, max_bytes=None):
@@ -594,6 +595,7 @@ class BaseIOStream(object):
             gen_log.warning("Got events for closed stream %s", fd)
             return
         try:
+            print ("iostream.py _handle_events event:{}".format(events))
             if self._connecting:
                 # Most IOLoops will report a write failed connect
                 # with the WRITE event, but SelectIOLoop reports a
@@ -633,6 +635,7 @@ class BaseIOStream(object):
                     "shouldn't happen: _handle_events without self._state"
                 self._state = state
                 self.io_loop.update_handler(self.fileno(), self._state)
+            print ("handle event over")
         except UnsatisfiableReadError as e:
             gen_log.info("Unsatisfiable read, closing connection: %s" % e)
             self.close(exc_info=e)
@@ -738,6 +741,7 @@ class BaseIOStream(object):
             self._pending_callbacks -= 1
 
     def _handle_read(self):
+        print ("come into iostream._handle_read")
         try:
             pos = self._read_to_buffer_loop()
         except UnsatisfiableReadError:
@@ -746,6 +750,7 @@ class BaseIOStream(object):
             gen_log.warning("error on read: %s" % e)
             self.close(exc_info=e)
             return
+        print ("iostream._handle_read pos = {}".format(pos))
         if pos is not None:
             self._read_from_buffer(pos)
             return
@@ -762,6 +767,7 @@ class BaseIOStream(object):
         return self._read_future
 
     def _run_read_callback(self, size, streaming):
+        print ("iostream._run_read_callback streaming = {}".format(streaming))
         if streaming:
             callback = self._streaming_callback
         else:
@@ -771,7 +777,9 @@ class BaseIOStream(object):
                 assert callback is None
                 future = self._read_future
                 self._read_future = None
+                print ("future.set_result  future : {}".format(future))
                 future.set_result(self._consume(size))
+        print ("iostream._run_read_callback callback = {}".format(callback))
         if callback is not None:
             assert (self._read_future is None) or streaming
             self._run_callback(callback, self._consume(size))
@@ -790,12 +798,14 @@ class BaseIOStream(object):
         # See if we've already got the data from a previous read
         self._run_streaming_callback()
         pos = self._find_read_pos()
+        print ("iostream.py _try_inline_read pos = {}".format(pos))
         if pos is not None:
             self._read_from_buffer(pos)
             return
         self._check_closed()
         try:
             pos = self._read_to_buffer_loop()
+            print("iostream.py _try_inline_read in try pos = {}".format(pos))
         except Exception:
             # If there was an in _read_to_buffer, we called close() already,
             # but couldn't run the close callback because of _pending_callbacks.
@@ -811,6 +821,7 @@ class BaseIOStream(object):
         if self.closed():
             self._maybe_run_close_callback()
         else:
+            print ("execute _add_io_state")
             self._add_io_state(ioloop.IOLoop.READ)
 
     def _read_to_buffer(self):
@@ -998,6 +1009,7 @@ class BaseIOStream(object):
             elif (self._read_buffer_size == 0 and
                   self._close_callback is not None):
                 self._add_io_state(ioloop.IOLoop.READ)
+        print ("_maybe_add_error_listener over")
 
     def _add_io_state(self, state):
         """Adds `state` (IOLoop.{READ,WRITE} flags) to our event handler.
@@ -1023,6 +1035,7 @@ class BaseIOStream(object):
         if self.closed():
             # connection has been closed, so there can be no future events
             return
+        print ("iostram.py _add_io_state self._state = {}".format(self._state))
         if self._state is None:
             self._state = ioloop.IOLoop.ERROR | state
             with stack_context.NullContext():

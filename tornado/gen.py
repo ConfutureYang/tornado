@@ -302,6 +302,7 @@ def _make_coroutine_wrapper(func, replace_callback):
 
         try:
             result = func(*args, **kwargs)
+            print ("gen.py coroutine result = {}".format(result))
         except (Return, StopIteration) as e:
             result = _value_from_stopiteration(e)
         except Exception:
@@ -321,6 +322,7 @@ def _make_coroutine_wrapper(func, replace_callback):
                 try:
                     orig_stack_contexts = stack_context._state.contexts
                     yielded = next(result)
+                    print ("gen.py coroutine yielded = {}".format(yielded))
                     if stack_context._state.contexts is not orig_stack_contexts:
                         yielded = _create_future()
                         yielded.set_exception(
@@ -332,7 +334,10 @@ def _make_coroutine_wrapper(func, replace_callback):
                 except Exception:
                     future_set_exc_info(future, sys.exc_info())
                 else:
+                    # print("gen.py coroutine before Run")
                     _futures_to_runners[future] = Runner(result, future, yielded)
+                    print ("after run future = {}".format(future))
+                    # print("gen.py coroutine after Run")
                 yielded = None
                 try:
                     return future
@@ -918,6 +923,7 @@ def with_timeout(timeout, future, quiet_exceptions=()):
     # in the queue, so cancellation cannot reliably bound our waiting time.
     future = convert_yielded(future)
     result = _create_future()
+    print ("execute gen.time_out")
     chain_future(future, result)
     io_loop = IOLoop.current()
 
@@ -940,6 +946,7 @@ def with_timeout(timeout, future, quiet_exceptions=()):
         # We know this future will resolve on the IOLoop, so we don't
         # need the extra thread-safety of IOLoop.add_future (and we also
         # don't care about StackContext here.
+        print ("future is instance of Future")
         future_add_done_callback(future,
             lambda future: io_loop.remove_timeout(timeout_handle))
     else:
@@ -947,6 +954,7 @@ def with_timeout(timeout, future, quiet_exceptions=()):
         # need to route them back to the IOLoop.
         io_loop.add_future(
             future, lambda future: io_loop.remove_timeout(timeout_handle))
+    print ("gen.with_timeout return result:{}".format(result))
     return result
 
 
@@ -1015,6 +1023,7 @@ class Runner(object):
     `.Future`)
     """
     def __init__(self, gen, result_future, first_yielded):
+        print ("here is in run")
         self.gen = gen
         self.result_future = result_future
         self.future = _null_future
@@ -1033,6 +1042,7 @@ class Runner(object):
         self.stack_context_deactivate = None
         if self.handle_yield(first_yielded):
             gen = result_future = first_yielded = None
+            print ("is ok for run")
             self.run()
 
     def register_callback(self, key):
@@ -1072,6 +1082,7 @@ class Runner(object):
         """Starts or resumes the generator, running until it reaches a
         yield point that is not ready.
         """
+        print ("come into run")
         if self.running or self.finished:
             return
         try:
@@ -1100,6 +1111,7 @@ class Runner(object):
                             # for faster GC on CPython.
                             exc_info = None
                     else:
+                        print ("Runner run value = {}".format(value))
                         yielded = self.gen.send(value)
 
                     if stack_context._state.contexts is not orig_stack_contexts:
@@ -1139,9 +1151,11 @@ class Runner(object):
     def handle_yield(self, yielded):
         # Lists containing YieldPoints require stack contexts;
         # other lists are handled in convert_yielded.
+        print ("_contains_yieldpoint : {}".format(_contains_yieldpoint(yielded)))
         if _contains_yieldpoint(yielded):
             yielded = multi(yielded)
 
+        print ("isinstance(yielded, YieldPoint) : {}".format(isinstance(yielded, YieldPoint)))
         if isinstance(yielded, YieldPoint):
             # YieldPoints are too closely coupled to the Runner to go
             # through the generic convert_yielded mechanism.
@@ -1188,6 +1202,7 @@ class Runner(object):
                 # Break a reference cycle to speed GC.
                 f = None # noqa
                 self.run()
+            print ("io_loop.add_future run future : {}".format(self.future))
             self.io_loop.add_future(
                 self.future, inner)
             return False
@@ -1308,6 +1323,7 @@ def convert_yielded(yielded):
     elif isinstance(yielded, (list, dict)):
         return multi(yielded)
     elif is_future(yielded):
+        print ("is_future(yielded) : {}".format(is_future(yielded)))
         return yielded
     elif isawaitable(yielded):
         return _wrap_awaitable(yielded)

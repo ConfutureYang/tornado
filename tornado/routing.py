@@ -253,6 +253,7 @@ class _RoutingDelegate(httputil.HTTPMessageDelegate):
         return self.delegate.data_received(chunk)
 
     def finish(self):
+        print ("_RoutingDelegate.delegate = {}".format(self.delegate))
         self.delegate.finish()
 
     def on_connection_close(self):

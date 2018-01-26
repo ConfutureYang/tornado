@@ -285,6 +285,7 @@ class Future(object):
             from tornado.ioloop import IOLoop
             IOLoop.current().add_callback(fn, self)
         else:
+            print ("future._callbacks.append fn : {}".format(fn))
             self._callbacks.append(fn)
 
     def set_result(self, result):
@@ -518,6 +519,7 @@ def return_future(f):
                     callback()
                 else:
                     callback(future.result())
+            print ("in return_future callback = {}".format(callback))
             future_add_done_callback(future, wrap(run_callback))
         return future
     return wrapper
@@ -535,6 +537,7 @@ def chain_future(a, b):
        `concurrent.futures.Future`.
 
     """
+    print ("first come in chain_future a:{}".format(a))
     def copy(future):
         assert future is a
         if b.done():
@@ -545,12 +548,15 @@ def chain_future(a, b):
         elif a.exception() is not None:
             b.set_exception(a.exception())
         else:
+            print ("concurrent.py chain_future b.result = a.result a:{}".format(a))
             b.set_result(a.result())
     if isinstance(a, Future):
+        print ("add_done_callback")
         future_add_done_callback(a, copy)
     else:
         # concurrent.futures.Future
         from tornado.ioloop import IOLoop
+        print ("IOLoop add_future")
         IOLoop.current().add_future(a, copy)
 
 
@@ -594,6 +600,8 @@ def future_add_done_callback(future, callback):
     .. versionadded:: 5.0
     """
     if future.done():
+        print ("callback(future)")
         callback(future)
     else:
+        print ("future.add_done_callback(callback)  future:{}  callback:{}".format(future,callback))
         future.add_done_callback(callback)

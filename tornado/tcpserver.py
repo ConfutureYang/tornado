@@ -292,8 +292,9 @@ class TCPServer(object):
                 stream = IOStream(connection,
                                   max_buffer_size=self.max_buffer_size,
                                   read_chunk_size=self.read_chunk_size)
-
+            print ("httpserver _handle_connection stream : {}".format(stream))
             future = self.handle_stream(stream, address)
+            print ("httpserver _handle_connection get future : {}".format(future))
             if future is not None:
                 IOLoop.current().add_future(gen.convert_yielded(future),
                                             lambda f: f.result())

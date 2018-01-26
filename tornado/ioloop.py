@@ -705,6 +705,7 @@ class IOLoop(Configurable):
         `.Future`.
         """
         assert is_future(future)
+        print ("ioloop add_future : {}".format(future))
         callback = stack_context.wrap(callback)
         future_add_done_callback(future,
                            lambda future: self.add_callback(callback, future))
@@ -741,6 +742,7 @@ class IOLoop(Configurable):
         self._executor = executor
 
     def _run_callback(self, callback):
+        print ("ioloop _run_callback : {}".format(callback))
         """Runs a callback with error handling.
 
         For use in subclasses.
@@ -887,7 +889,9 @@ class PollIOLoop(IOLoop):
 
     def add_handler(self, fd, handler, events):
         fd, obj = self.split_fd(fd)
+        print ("ioloop.py add_handler handler = {}".format(handler))
         self._handlers[fd] = (obj, stack_context.wrap(handler))
+        print ("self._handlers[fd][1] = {} fd = {}".format(self._handlers[fd][1],fd))
         self._impl.register(fd, events | self.ERROR)
 
     def update_handler(self, fd, events):
@@ -1050,6 +1054,7 @@ class PollIOLoop(IOLoop):
                     fd, events = self._events.popitem()
                     try:
                         fd_obj, handler_func = self._handlers[fd]
+                        print ("ioloop.py in while execute func:{} fd:{}".format(handler_func,fd))
                         handler_func(fd_obj, events)
                     except (OSError, IOError) as e:
                         if errno_from_exception(e) == errno.EPIPE:
@@ -1096,6 +1101,7 @@ class PollIOLoop(IOLoop):
         self._cancellations += 1
 
     def add_callback(self, callback, *args, **kwargs):
+        print ("ioloop add_callback : {}".format(callback))
         if self._closing:
             return
         # Blindly insert into self._callbacks. This is safe even

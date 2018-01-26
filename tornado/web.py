@@ -1511,6 +1511,7 @@ class RequestHandler(object):
                 self.check_xsrf_cookie()
 
             result = self.prepare()
+            print ("in _execute result = {}".format(result))
             if result is not None:
                 result = yield result
             if self._prepared_future is not None:
@@ -1531,7 +1532,9 @@ class RequestHandler(object):
                     return
 
             method = getattr(self, self.request.method.lower())
+            print ("in _execute method = {}".format(method))
             result = method(*self.path_args, **self.path_kwargs)
+            print ("in _execute method get result = {}".format(result))
             if result is not None:
                 result = yield result
             if self._auto_finish and not self._finished:
@@ -2112,6 +2115,7 @@ class _HandlerDelegate(httputil.HTTPMessageDelegate):
             self.chunks.append(data)
 
     def finish(self):
+        print ("self.stream_request_body = {}".format(self.stream_request_body))
         if self.stream_request_body:
             future_set_result_unless_cancelled(self.request.body, None)
         else:

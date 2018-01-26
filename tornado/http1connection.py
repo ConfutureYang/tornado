@@ -169,12 +169,16 @@ class HTTP1Connection(httputil.HTTPConnection):
                 except gen.TimeoutError:
                     self.close()
                     raise gen.Return(False)
+            print ("header_data type:{}".format(type(header_data)))
             start_line, headers = self._parse_headers(header_data)
+            print ("start_line = {}".format(start_line))
+            # print ("headers = {}".format(headers))
             if self.is_client:
                 start_line = httputil.parse_response_start_line(start_line)
                 self._response_start_line = start_line
             else:
                 start_line = httputil.parse_request_start_line(start_line)
+                print ("after parse start_line = {}".format(start_line))
                 self._request_start_line = start_line
                 self._request_headers = headers
 
@@ -183,6 +187,7 @@ class HTTP1Connection(httputil.HTTPConnection):
             need_delegate_close = True
             with _ExceptionLoggingContext(app_log):
                 header_future = delegate.headers_received(start_line, headers)
+                print ("read_message header_future = {}".format(header_future))
                 if header_future is not None:
                     yield header_future
             if self.stream is None:
@@ -217,6 +222,7 @@ class HTTP1Connection(httputil.HTTPConnection):
             if not skip_body:
                 body_future = self._read_body(
                     start_line.code if self.is_client else 0, headers, delegate)
+                print ("body_future = {}".format(body_future))
                 if body_future is not None:
                     if self._body_timeout is None:
                         yield body_future
@@ -232,13 +238,18 @@ class HTTP1Connection(httputil.HTTPConnection):
                             self.stream.close()
                             raise gen.Return(False)
             self._read_finished = True
+            print ("self._write_finished = {}".format(self._write_finished))
             if not self._write_finished or self.is_client:
                 need_delegate_close = False
                 with _ExceptionLoggingContext(app_log):
+                    print ("delegate = {}".format(delegate))
                     delegate.finish()
             # If we're waiting for the application to produce an asynchronous
             # response, and we're not detached, register a close callback
             # on the stream (we didn't need one while we were reading)
+            print ("self._finish_future.done() : {}".format(self._finish_future.done()))
+            print ("self.stream : {}".format(self.stream))
+            print ("self.stream.closed() : {}".format(self.stream.closed()))
             if (not self._finish_future.done() and
                     self.stream is not None and
                     not self.stream.closed()):
@@ -714,6 +725,7 @@ class HTTP1ServerConnection(object):
         """
         assert isinstance(delegate, httputil.HTTPServerConnectionDelegate)
         self._serving_future = self._server_request_loop(delegate)
+        print ("self._serving_future = {}".format(self._serving_future))
         # Register the future on the IOLoop so its errors get logged.
         self.stream.io_loop.add_future(self._serving_future,
                                        lambda f: f.result())

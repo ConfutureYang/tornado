@@ -83,6 +83,7 @@ class _KQueue(object):
                     events[fd] = events.get(fd, 0) | IOLoop.WRITE
             if kevent.flags & select.KQ_EV_ERROR:
                 events[fd] = events.get(fd, 0) | IOLoop.ERROR
+        print ("pool return events.items:{}".format(events.items()))
         return events.items()
 
 

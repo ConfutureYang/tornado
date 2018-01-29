@@ -192,17 +192,15 @@ class HTTPServer(TCPServer, Configurable,
         conn = HTTP1ServerConnection(
             stream, self.conn_params, context)
         self._connections.add(conn)
+        print ("httpserver.py handle_stream httpserver:{}".format(self))
         conn.start_serving(self)
 
     def start_request(self, server_conn, request_conn):
         if isinstance(self.request_callback, httputil.HTTPServerConnectionDelegate):
             delegate = self.request_callback.start_request(server_conn, request_conn)
-            print("start_request  isinstance")
         else:
-            print("start_request  is not instance")
             delegate = _CallableAdapter(self.request_callback, request_conn)
 
-        print ("self.xheaders = {}".format(self.xheaders))
         if self.xheaders:
             delegate = _ProxyAdapter(delegate, request_conn)
 

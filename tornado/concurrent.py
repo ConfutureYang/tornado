@@ -283,9 +283,10 @@ class Future(object):
         """
         if self._done:
             from tornado.ioloop import IOLoop
+            print ("concurrent.py add_done_callback ioloop.add_callback :{}      future:{}".format(fn,self))
             IOLoop.current().add_callback(fn, self)
         else:
-            print ("future._callbacks.append fn : {}".format(fn))
+            print ("concurrent.py add_done_callback future._callbacks.append fn : {}     future:{}".format(fn,self))
             self._callbacks.append(fn)
 
     def set_result(self, result):
@@ -342,6 +343,7 @@ class Future(object):
         from tornado.ioloop import IOLoop
         loop = IOLoop.current()
         for cb in self._callbacks:
+            print ("concurrent.py _set_done callback:{}  future:{}".format(cb,self))
             loop.add_callback(cb, self)
         self._callbacks = None
 
@@ -537,7 +539,7 @@ def chain_future(a, b):
        `concurrent.futures.Future`.
 
     """
-    print ("first come in chain_future a:{}".format(a))
+    print ("concurrent.py chain_future a:{}".format(a))
     def copy(future):
         assert future is a
         if b.done():
@@ -551,12 +553,12 @@ def chain_future(a, b):
             print ("concurrent.py chain_future b.result = a.result a:{}".format(a))
             b.set_result(a.result())
     if isinstance(a, Future):
-        print ("add_done_callback")
+        print ("concurrent.py chain_future future_add_done_callback")
         future_add_done_callback(a, copy)
     else:
         # concurrent.futures.Future
         from tornado.ioloop import IOLoop
-        print ("IOLoop add_future")
+        print ("concurrent.py chain_future IOLoop add_future a:{}    copy:{}".format(a,copy))
         IOLoop.current().add_future(a, copy)
 
 
@@ -600,8 +602,8 @@ def future_add_done_callback(future, callback):
     .. versionadded:: 5.0
     """
     if future.done():
-        print ("callback(future)")
+        print ("concurrent.py future_add_done_callback callback(future)")
         callback(future)
     else:
-        print ("future.add_done_callback(callback)  future:{}  callback:{}".format(future,callback))
+        print ("concurrent.py future_add_done_callback add_done_callback  future:{}  callback:{}".format(future,callback))
         future.add_done_callback(callback)

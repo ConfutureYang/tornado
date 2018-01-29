@@ -256,6 +256,7 @@ class RequestHandler(object):
         pass
 
     def on_finish(self):
+        print ("web.py execute self.on_finish")
         """Called after the end of a request.
 
         Override this method to perform cleanup, logging, etc.
@@ -945,6 +946,8 @@ class RequestHandler(object):
            Now returns a `.Future` if no callback is given.
         """
         chunk = b"".join(self._write_buffer)
+        print ("web.py flush  chunk:{}".format(chunk))
+        print ("web.py flush self._headers_written:{}".format(self._headers_written))
         self._write_buffer = []
         if not self._headers_written:
             self._headers_written = True
@@ -967,6 +970,8 @@ class RequestHandler(object):
             start_line = httputil.ResponseStartLine('',
                                                     self._status_code,
                                                     self._reason)
+            print ("web.py flush start_line = {}".format(start_line))
+            print ("web.py flush self.request:{}     self.request.connection:{}".format(self.request,self.request.connection))
             return self.request.connection.write_headers(
                 start_line, self._headers, chunk, callback=callback)
         else:
@@ -987,7 +992,7 @@ class RequestHandler(object):
 
         if chunk is not None:
             self.write(chunk)
-
+        print ("web.py finish self._headers_written:{}".format(self._headers_written))
         # Automatically support ETags and add the Content-Length header if
         # we have not flushed any content yet.
         if not self._headers_written:
@@ -1012,8 +1017,9 @@ class RequestHandler(object):
             # garbage collection of the RequestHandler when there
             # are keepalive connections)
             self.request.connection.set_close_callback(None)
-
+        print ("web.py finish before execute self.flush")
         self.flush(include_footers=True)
+        print ("web.py before self.request.finish:{}".format(self.request))
         self.request.finish()
         self._log()
         self._finished = True
@@ -1537,6 +1543,7 @@ class RequestHandler(object):
             print ("in _execute method get result = {}".format(result))
             if result is not None:
                 result = yield result
+            print ("web.py _execute self._auto_finish:{}      self._finished:{}".format(self._auto_finish,self._finished))
             if self._auto_finish and not self._finished:
                 self.finish()
         except Exception as e:

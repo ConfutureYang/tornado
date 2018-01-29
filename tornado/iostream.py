@@ -336,6 +336,7 @@ class BaseIOStream(object):
             Added the ``max_bytes`` argument.  The ``callback`` argument is
             now optional and a `.Future` will be returned if it is omitted.
         """
+        print ("iotream.py execute read_until_regex iostream:{}".format(self))
         future = self._set_read_callback(callback)
         self._read_regex = re.compile(regex)
         self._read_max_bytes = max_bytes
@@ -635,7 +636,7 @@ class BaseIOStream(object):
                     "shouldn't happen: _handle_events without self._state"
                 self._state = state
                 self.io_loop.update_handler(self.fileno(), self._state)
-            print ("handle event over")
+            print ("iostream.py handle event over")
         except UnsatisfiableReadError as e:
             gen_log.info("Unsatisfiable read, closing connection: %s" % e)
             self.close(exc_info=e)
@@ -741,7 +742,7 @@ class BaseIOStream(object):
             self._pending_callbacks -= 1
 
     def _handle_read(self):
-        print ("come into iostream._handle_read")
+        print ("iostram.py _hanle_read come into iostream._handle_read")
         try:
             pos = self._read_to_buffer_loop()
         except UnsatisfiableReadError:
@@ -750,7 +751,7 @@ class BaseIOStream(object):
             gen_log.warning("error on read: %s" % e)
             self.close(exc_info=e)
             return
-        print ("iostream._handle_read pos = {}".format(pos))
+        print ("iostream.py _handle_read pos = {}".format(pos))
         if pos is not None:
             self._read_from_buffer(pos)
             return
@@ -767,7 +768,7 @@ class BaseIOStream(object):
         return self._read_future
 
     def _run_read_callback(self, size, streaming):
-        print ("iostream._run_read_callback streaming = {}".format(streaming))
+        print ("iostream.py _run_read_callback streaming = {}".format(streaming))
         if streaming:
             callback = self._streaming_callback
         else:
@@ -777,9 +778,9 @@ class BaseIOStream(object):
                 assert callback is None
                 future = self._read_future
                 self._read_future = None
-                print ("future.set_result  future : {}".format(future))
+                print ("iostream.py future.set_result  future : {}".format(future))
                 future.set_result(self._consume(size))
-        print ("iostream._run_read_callback callback = {}".format(callback))
+        print ("iostream.py _run_read_callback callback = {}".format(callback))
         if callback is not None:
             assert (self._read_future is None) or streaming
             self._run_callback(callback, self._consume(size))
@@ -821,7 +822,7 @@ class BaseIOStream(object):
         if self.closed():
             self._maybe_run_close_callback()
         else:
-            print ("execute _add_io_state")
+            print ("iostream.py execute _add_io_state")
             self._add_io_state(ioloop.IOLoop.READ)
 
     def _read_to_buffer(self):
@@ -988,6 +989,7 @@ class BaseIOStream(object):
         if self._read_buffer_pos > self._read_buffer_size:
             del self._read_buffer[:self._read_buffer_pos]
             self._read_buffer_pos = 0
+        print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  iostream.py _consume return b:{}".format(b))
         return b
 
     def _check_closed(self):
@@ -1009,7 +1011,6 @@ class BaseIOStream(object):
             elif (self._read_buffer_size == 0 and
                   self._close_callback is not None):
                 self._add_io_state(ioloop.IOLoop.READ)
-        print ("_maybe_add_error_listener over")
 
     def _add_io_state(self, state):
         """Adds `state` (IOLoop.{READ,WRITE} flags) to our event handler.
@@ -1039,6 +1040,7 @@ class BaseIOStream(object):
         if self._state is None:
             self._state = ioloop.IOLoop.ERROR | state
             with stack_context.NullContext():
+                print ("iostram.py _add_io_state self.io_loop.add_handler   self.fileno:{}".format( self.fileno()))
                 self.io_loop.add_handler(
                     self.fileno(), self._handle_events, self._state)
         elif not self._state & state:

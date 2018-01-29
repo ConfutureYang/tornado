@@ -724,8 +724,9 @@ class HTTP1ServerConnection(object):
         :arg delegate: a `.HTTPServerConnectionDelegate`
         """
         assert isinstance(delegate, httputil.HTTPServerConnectionDelegate)
+        print ("http1connection.py start_serving delegate = {}".format(delegate))
         self._serving_future = self._server_request_loop(delegate)
-        print ("self._serving_future = {}".format(self._serving_future))
+        print ("http1connection.py start_serving self._serving_future = {}".format(self._serving_future))
         # Register the future on the IOLoop so its errors get logged.
         self.stream.io_loop.add_future(self._serving_future,
                                        lambda f: f.result())
@@ -737,6 +738,7 @@ class HTTP1ServerConnection(object):
                 conn = HTTP1Connection(self.stream, False,
                                        self.params, self.context)
                 request_delegate = delegate.start_request(self, conn)
+                print ("http1connection.py _server_request_loop return request_delegate:{}".format(delegate,request_delegate))
                 try:
                     ret = yield conn.read_response(request_delegate)
                 except (iostream.StreamClosedError,

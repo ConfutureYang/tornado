@@ -705,7 +705,7 @@ class IOLoop(Configurable):
         `.Future`.
         """
         assert is_future(future)
-        print ("ioloop add_future : {}".format(future))
+        print ("ioloop.py ioloop add_future : {}".format(future))
         callback = stack_context.wrap(callback)
         future_add_done_callback(future,
                            lambda future: self.add_callback(callback, future))
@@ -891,7 +891,7 @@ class PollIOLoop(IOLoop):
         fd, obj = self.split_fd(fd)
         print ("ioloop.py add_handler handler = {}".format(handler))
         self._handlers[fd] = (obj, stack_context.wrap(handler))
-        print ("self._handlers[fd][1] = {} fd = {}".format(self._handlers[fd][1],fd))
+        print ("ioloop.py add_handler self._handlers[fd][1] = {} fd = {}".format(self._handlers[fd][1],fd))
         self._impl.register(fd, events | self.ERROR)
 
     def update_handler(self, fd, events):
@@ -998,6 +998,7 @@ class PollIOLoop(IOLoop):
                         heapq.heapify(self._timeouts)
 
                 for i in range(ncallbacks):
+                    print ("ioloop.py start outer while will run callback")
                     self._run_callback(self._callbacks.popleft())
                 for timeout in due_timeouts:
                     if timeout.callback is not None:
@@ -1030,6 +1031,7 @@ class PollIOLoop(IOLoop):
 
                 try:
                     event_pairs = self._impl.poll(poll_timeout)
+                    print ("ioloop.py func start outer while get event_pairs:{}".format(event_pairs))
                 except Exception as e:
                     # Depending on python version and IOLoop implementation,
                     # different exception types may be thrown and there are
@@ -1054,7 +1056,7 @@ class PollIOLoop(IOLoop):
                     fd, events = self._events.popitem()
                     try:
                         fd_obj, handler_func = self._handlers[fd]
-                        print ("ioloop.py in while execute func:{} fd:{}".format(handler_func,fd))
+                        print ("ioloop.py inner while execute func:{} fd:{}".format(handler_func,fd))
                         handler_func(fd_obj, events)
                     except (OSError, IOError) as e:
                         if errno_from_exception(e) == errno.EPIPE:
@@ -1101,13 +1103,14 @@ class PollIOLoop(IOLoop):
         self._cancellations += 1
 
     def add_callback(self, callback, *args, **kwargs):
-        print ("ioloop add_callback : {}".format(callback))
+        print ("ioloop.py add_callback callback: {}".format(callback))
         if self._closing:
             return
         # Blindly insert into self._callbacks. This is safe even
         # from signal handlers because deque.append is atomic.
         self._callbacks.append(functools.partial(
             stack_context.wrap(callback), *args, **kwargs))
+        print ("ioloop.py add_callback after append ioloop._callbacks={}".format(self._callbacks))
         if thread.get_ident() != self._thread_ident:
             # This will write one byte but Waker.consume() reads many
             # at once, so it's ok to write even when not strictly

@@ -334,12 +334,12 @@ def _make_coroutine_wrapper(func, replace_callback):
                 except Exception:
                     future_set_exc_info(future, sys.exc_info())
                 else:
-                    # print("gen.py coroutine before Run")
+                    print("gen.py coroutine before Run future:{}     yield:{}".format(future,yielded))
                     _futures_to_runners[future] = Runner(result, future, yielded)
-                    print ("after run future = {}".format(future))
-                    # print("gen.py coroutine after Run")
+                    print("gen.py coroutine after Run future:{}     yield:{}".format(future,yielded))
                 yielded = None
                 try:
+                    print ("gen.py _make_coroutine_wrapper return future:{}".format(future))
                     return future
                 finally:
                     # Subtle memory optimization: if next() raised an exception,
@@ -923,7 +923,7 @@ def with_timeout(timeout, future, quiet_exceptions=()):
     # in the queue, so cancellation cannot reliably bound our waiting time.
     future = convert_yielded(future)
     result = _create_future()
-    print ("execute gen.time_out")
+    print ("gen.py time_out before chain_future future:{}    result:{}".format(future,result))
     chain_future(future, result)
     io_loop = IOLoop.current()
 
@@ -954,7 +954,7 @@ def with_timeout(timeout, future, quiet_exceptions=()):
         # need to route them back to the IOLoop.
         io_loop.add_future(
             future, lambda future: io_loop.remove_timeout(timeout_handle))
-    print ("gen.with_timeout return result:{}".format(result))
+    print ("gen.py with_timeout return result:{}".format(result))
     return result
 
 
@@ -1023,7 +1023,7 @@ class Runner(object):
     `.Future`)
     """
     def __init__(self, gen, result_future, first_yielded):
-        print ("here is in run")
+        print ("gen.py Runner init:{}".format(self))
         self.gen = gen
         self.result_future = result_future
         self.future = _null_future
@@ -1082,7 +1082,7 @@ class Runner(object):
         """Starts or resumes the generator, running until it reaches a
         yield point that is not ready.
         """
-        print ("come into run")
+        print ("come into run Runner : {}".format(self))
         if self.running or self.finished:
             return
         try:
@@ -1111,7 +1111,7 @@ class Runner(object):
                             # for faster GC on CPython.
                             exc_info = None
                     else:
-                        print ("Runner run value = {}".format(value))
+                        print ("Runner send value  Runner= {}".format(self))
                         yielded = self.gen.send(value)
 
                     if stack_context._state.contexts is not orig_stack_contexts:
@@ -1193,7 +1193,7 @@ class Runner(object):
             except BadYieldError:
                 self.future = Future()
                 future_set_exc_info(self.future, sys.exc_info())
-
+        print ("gen.py handle_yield self.future is moment:{}".format(self.future is moment))
         if self.future is moment:
             self.io_loop.add_callback(self.run)
             return False
@@ -1202,7 +1202,7 @@ class Runner(object):
                 # Break a reference cycle to speed GC.
                 f = None # noqa
                 self.run()
-            print ("io_loop.add_future run future : {}".format(self.future))
+            print ("gen.py handle_yield io_loop.add_future run future : {}      Runner:{}".format(self.future,self))
             self.io_loop.add_future(
                 self.future, inner)
             return False
@@ -1316,6 +1316,7 @@ def convert_yielded(yielded):
     .. versionadded:: 4.1
     """
     # Lists and dicts containing YieldPoints were handled earlier.
+    print ("gen.py convert_yielded yielded.type :{}".format(type(yielded)))
     if yielded is None or yielded is moment:
         return moment
     elif yielded is _null_future:

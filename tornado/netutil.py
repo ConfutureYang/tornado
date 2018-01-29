@@ -238,6 +238,7 @@ def add_accept_handler(sock, callback):
                 return
             try:
                 connection, address = sock.accept()
+                print ("netutil.py accept_handler new accept sock:{}     sock.fd:{}".format(connection,connection.fileno()))
             except socket.error as e:
                 # _ERRNO_WOULDBLOCK indicate we have accepted every
                 # connection that is available.

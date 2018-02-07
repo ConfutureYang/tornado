@@ -7,9 +7,7 @@ import json
 class MainHandler(web.RequestHandler):
 	def get(self):
 		y = self.get_argument("y")
-		y = json.loads(y)
 		print y
-		print type(y)
 		self.write("Hello Tornado")
 
 def make_app():
